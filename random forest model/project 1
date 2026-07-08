@@ -1,0 +1,89 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+
+st.title("🌳 Random Forest Classifier")
+
+uploaded = st.file_uploader(
+    "Upload CSV File",
+    type=["csv"]
+)
+
+if uploaded is not None:
+
+    df = pd.read_csv(uploaded)
+
+    st.subheader("Dataset")
+    st.dataframe(df.head())
+
+    target = st.selectbox(
+        "Select Target Column",
+        df.columns
+    )
+
+    X = df.drop(columns=[target])
+    y = df[target]
+
+    X = pd.get_dummies(X)
+    y = pd.factorize(y)[0]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42
+    )
+
+    if st.button("Train Model"):
+
+        model = RandomForestClassifier(
+            n_estimators=100,
+            random_state=42
+        )
+
+        model.fit(X_train, y_train)
+
+        pred = model.predict(X_test)
+
+        accuracy = accuracy_score(
+            y_test,
+            pred
+        )
+
+        st.success(
+            f"Accuracy: {accuracy:.2f}"
+        )
+
+        # Feature Importance
+        importance = pd.DataFrame({
+            "Feature": X.columns,
+            "Importance": model.feature_importances_
+        })
+
+        importance = importance.sort_values(
+            by="Importance",
+            ascending=False
+        )
+
+        st.subheader(
+            "Feature Importance"
+        )
+
+        fig, ax = plt.subplots(
+            figsize=(8,5)
+        )
+
+        ax.bar(
+            importance["Feature"],
+            importance["Importance"]
+        )
+
+        plt.xticks(rotation=90)
+
+        st.pyplot(fig)
+
+        st.dataframe(importance)
